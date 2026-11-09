@@ -18,6 +18,8 @@ export const config = {
 
   databaseUrl: requiredEnv("DATABASE_URL"),
 
+  saltRounds: process.env.SALT_ROUNDS,
+
   jwt: {
     secret: requiredEnv("JWT_SECRET"),
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
@@ -26,5 +28,10 @@ export const config = {
   razorpay: {
     keyId: process.env.RAZORPAY_KEY_ID,
     keySecret: process.env.RAZORPAY_KEY_SECRET,
+  },
+  admin: {
+    name: process.env.ADMIN_NAME || "NutriBite Admin",
+    email: process.env.ADMIN_EMAIL,
+    password: process.env.ADMIN_PASSWORD,
   },
 };
