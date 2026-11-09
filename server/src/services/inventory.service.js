@@ -37,10 +37,12 @@ const recalculateFoodAvailability = async (tx, ingredientId) => {
           ingredient.isActive && ingredient.stockQuantity >= quantity,
       );
 
-    await tx.food.update({
-      where: { id: food.id },
-      data: { isAvailable: hasEnoughStock },
-    });
+    if (!hasEnoughStock) {
+      await tx.food.update({
+        where: { id: food.id },
+        data: { isAvailable: false },
+      });
+    }
   }
 };
 
