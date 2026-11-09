@@ -25,6 +25,7 @@ import reviewRoutes from "./routes/review.routes.js";
 import adminReviewRoutes from "./routes/admin-review.routes.js";
 import suggestionRoutes from "./routes/suggestion.routes.js";
 import adminSuggestionRoutes from "./routes/admin-suggestion.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 const app = express();
 
@@ -63,6 +64,7 @@ app.use("/api/v1/reviews", reviewRoutes);
 app.use("/api/v1/admin/reviews", adminReviewRoutes);
 app.use("/api/v1/suggestions", suggestionRoutes);
 app.use("/api/v1/admin/suggestions", adminSuggestionRoutes);
+app.use("/api/v1/admin/dashboard", dashboardRoutes);
 
 // Handle unknown routes
 app.use(notFound);
