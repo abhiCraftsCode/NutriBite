@@ -18,6 +18,9 @@ import cartRoutes from "./routes/cart.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import adminOrderRoutes from "./routes/admin-order.routes.js";
+import deliveryPartnerRoutes from "./routes/delivery-partner.routes.js";
+import adminDeliveryRoutes from "./routes/delivery-admin.routes.js";
+import deliveryRoutes from "./routes/delivery.routes.js";
 
 const app = express();
 
@@ -49,6 +52,9 @@ app.use("/api/v1/cart", cartRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/admin/orders", adminOrderRoutes);
+app.use("/api/v1/admin/delivery-partners", deliveryPartnerRoutes);
+app.use("/api/v1/admin", adminDeliveryRoutes);
+app.use("/api/v1/delivery", deliveryRoutes);
 
 // Handle unknown routes
 app.use(notFound);
