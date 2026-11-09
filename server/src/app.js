@@ -19,8 +19,12 @@ import orderRoutes from "./routes/order.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import adminOrderRoutes from "./routes/admin-order.routes.js";
 import deliveryPartnerRoutes from "./routes/delivery-partner.routes.js";
-import adminDeliveryRoutes from "./routes/delivery-admin.routes.js";
+import adminDeliveryRoutes from "./routes/admin-delivery.routes.js";
 import deliveryRoutes from "./routes/delivery.routes.js";
+import reviewRoutes from "./routes/review.routes.js";
+import adminReviewRoutes from "./routes/admin-review.routes.js";
+import suggestionRoutes from "./routes/suggestion.routes.js";
+import adminSuggestionRoutes from "./routes/admin-suggestion.routes.js";
 
 const app = express();
 
@@ -55,6 +59,10 @@ app.use("/api/v1/admin/orders", adminOrderRoutes);
 app.use("/api/v1/admin/delivery-partners", deliveryPartnerRoutes);
 app.use("/api/v1/admin", adminDeliveryRoutes);
 app.use("/api/v1/delivery", deliveryRoutes);
+app.use("/api/v1/reviews", reviewRoutes);
+app.use("/api/v1/admin/reviews", adminReviewRoutes);
+app.use("/api/v1/suggestions", suggestionRoutes);
+app.use("/api/v1/admin/suggestions", adminSuggestionRoutes);
 
 // Handle unknown routes
 app.use(notFound);

@@ -1,6 +1,6 @@
-import prisma from "../config/prisma.js";
+import { prisma } from "../config/prisma.js";
 import AppError from "../utils/AppError.js";
-import { parseId } from "../utils/parseId.js";
+import parseId from "../utils/parseId.js";
 
 const activeDeliveryStatuses = [
   "ASSIGNED",

@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 
-import prisma from "../config/prisma.js";
+import { prisma } from "../config/prisma.js";
 import AppError from "../utils/AppError.js";
 
 export const createDeliveryPartner = async (data) => {
