@@ -12,6 +12,7 @@ import categoryRoutes from "./routes/category.routes.js";
 import foodRoutes from "./routes/food.routes.js";
 import ingredientRoutes from "./routes/ingredient.routes.js";
 import recipeRoutes from "./routes/recipe.routes.js";
+import inventoryRoutes from "./routes/inventory.routes.js";
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/foods", foodRoutes);
 app.use("/api/v1/ingredients", ingredientRoutes);
 app.use("/api/v1/recipes", recipeRoutes);
+app.use("/api/v1/inventory", inventoryRoutes);
 
 // Handle unknown routes
 app.use(notFound);
