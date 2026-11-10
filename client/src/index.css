@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { -webkit-font-smoothing: antialiased; }
+  body { @apply bg-cream font-sans text-ink; }
+  h1, h2, h3 { @apply tracking-tight; }
+  :focus-visible { outline: 2px solid #F57C1F; outline-offset: 2px; }
+  input, select, textarea { @apply font-sans; }
+}
+@layer components {
+  .tile { @apply bg-white rounded-tile shadow-tile; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-ink { @apply btn bg-ink text-white hover:bg-neutral-800; }
+  .btn-brand { @apply btn bg-brand text-white hover:bg-brand-dark; }
+  .btn-ghost { @apply btn bg-white text-ink ring-1 ring-line hover:bg-soft; }
+  .btn-danger { @apply btn bg-white text-red-600 ring-1 ring-red-200 hover:bg-red-50; }
+  .input { @apply w-full rounded-2xl bg-white px-4 py-2.5 text-sm ring-1 ring-line placeholder:text-neutral-400 focus:ring-2 focus:ring-brand focus:outline-none; }
+  .pill { @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium; }
+  .label { @apply mb-1 block text-xs font-medium text-mute; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
