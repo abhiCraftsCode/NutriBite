@@ -67,6 +67,9 @@ app.use("/api/v1/suggestions", suggestionRoutes);
 app.use("/api/v1/admin/suggestions", adminSuggestionRoutes);
 app.use("/api/v1/admin/dashboard", dashboardRoutes);
 app.use("/api/v1/account", accountRoutes);
+app.get("/", (req, res) => {
+  res.send("The server is running successfully.");
+});
 
 // Handle unknown routes
 app.use(notFound);
