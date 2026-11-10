@@ -1,0 +1,510 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// -----------------------------------------------------
+// ENUMS
+// -----------------------------------------------------
+
+enum UserRole {
+  ADMIN
+  CUSTOMER
+  DELIVERY_PARTNER
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PLACED
+  CONFIRMED
+  PREPARING
+  READY_FOR_PICKUP
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  CREATED
+  AUTHORIZED
+  CAPTURED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  CASH
+}
+
+enum DeliveryStatus {
+  UNASSIGNED
+  ASSIGNED
+  ACCEPTED
+  PICKED_UP
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum SuggestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+enum StockMovementType {
+  PURCHASE
+  RESTOCK
+  ORDER_DEDUCTION
+  ADJUSTMENT
+  WASTE
+}
+
+// -----------------------------------------------------
+// USERS & AUTHENTICATION
+// -----------------------------------------------------
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  password     String
+  phone        String?
+  role         UserRole @default(CUSTOMER)
+  isActive     Boolean  @default(true)
+
+  // Delivery partner account creation
+  createdById  Int?
+  createdBy    User?    @relation("PartnerCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdUsers User[]   @relation("PartnerCreator")
+
+  addresses    Address[]
+  cart         Cart?
+  orders       Order[]
+  reviews      Review[]
+  suggestions  Suggestion[]
+
+  assignedDeliveries Delivery[] @relation("DeliveryPartner")
+  deliveryEvents     DeliveryEvent[] @relation("DeliveryEventActor")
+
+  orderStatusChanges OrderStatusHistory[] @relation("OrderStatusActor")
+  inventoryMovements IngredientStockMovement[]
+
+  moderatedReviews   Review[]     @relation("ReviewModerator")
+  reviewedSuggestions Suggestion[] @relation("SuggestionReviewer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([role])
+}
+
+// -----------------------------------------------------
+// CUSTOMER ADDRESSES
+// -----------------------------------------------------
+
+model Address {
+  id        Int    @id @default(autoincrement())
+  userId    Int
+  label     String @default("Home")
+  address   String
+  city      String
+  state     String
+  pincode   String
+  landmark  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders Order[] @relation("OrderAddress")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// -----------------------------------------------------
+// FOOD CATALOGUE
+// -----------------------------------------------------
+
+model Category {
+  id          Int     @id @default(autoincrement())
+  name        String  @unique
+  description String?
+  image       String?
+  isActive    Boolean @default(true)
+
+  foods Food[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Food {
+  id          Int     @id @default(autoincrement())
+  categoryId  Int
+  name        String
+  description String?
+  image       String?
+
+  // Price in paise
+  price       Int
+
+  // Nutritional information per serving
+  servingSize String?
+  calories    Float?
+  protein     Float?
+  carbohydrates Float?
+  fat         Float?
+
+  // Allergen and ingredient warnings
+  notes       String?
+
+  prepTimeMinutes Int?
+
+  // Admin publishing control and stock-based availability
+  isPublished  Boolean @default(false)
+  isAvailable  Boolean @default(true)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  recipe      Recipe?
+  ingredients FoodIngredient[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  reviews     Review[]
+
+  sourceSuggestion Suggestion? @relation("SuggestionFood")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@index([name])
+  @@index([isPublished, isAvailable])
+}
+
+model Recipe {
+  id          Int    @id @default(autoincrement())
+  foodId      Int    @unique
+  instructions String
+
+  prepTimeMinutes Int?
+  cookTimeMinutes Int?
+
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// -----------------------------------------------------
+// INGREDIENTS & INVENTORY
+// -----------------------------------------------------
+
+model Ingredient {
+  id            Int    @id @default(autoincrement())
+  name          String @unique
+  unit          String
+
+  stockQuantity Float  @default(0)
+  reorderLevel  Float  @default(0)
+
+  isActive Boolean @default(true)
+
+  foods FoodIngredient[]
+  movements IngredientStockMovement[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FoodIngredient {
+  foodId       Int
+  ingredientId Int
+
+  // Quantity of this ingredient required for one serving
+  quantity     Float
+
+  food Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+
+  @@id([foodId, ingredientId])
+  @@index([ingredientId])
+}
+
+model IngredientStockMovement {
+  id           Int               @id @default(autoincrement())
+  ingredientId Int
+  userId       Int?
+
+  type         StockMovementType
+  quantity     Float
+  note         String?
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  user       User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([ingredientId, createdAt])
+}
+
+// -----------------------------------------------------
+// CART
+// -----------------------------------------------------
+
+model Cart {
+  id     Int @id @default(autoincrement())
+  userId Int @unique
+
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CartItem {
+  id       Int @id @default(autoincrement())
+  cartId   Int
+  foodId   Int
+  quantity Int @default(1)
+
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  food Food @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([cartId, foodId])
+  @@index([foodId])
+}
+
+// -----------------------------------------------------
+// ORDERS
+// -----------------------------------------------------
+
+model Order {
+  id          Int @id @default(autoincrement())
+  orderNumber String @unique
+
+  userId    Int
+  addressId Int?
+
+  // Address snapshot
+  deliveryName    String
+  deliveryPhone   String
+  deliveryAddress String
+  deliveryCity    String
+  deliveryState   String
+  deliveryPincode String
+  deliveryLandmark String?
+
+  // All monetary values in paise
+  subtotal    Int
+  deliveryFee Int @default(0)
+  total       Int
+
+  status OrderStatus @default(PENDING_PAYMENT)
+
+  cancelReason String?
+  cancelledAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  address Address? @relation("OrderAddress", fields: [addressId], references: [id], onDelete: SetNull)
+
+  items       OrderItem[]
+  payments    Payment[]
+  delivery    Delivery?
+  statusHistory OrderStatusHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id        Int @id @default(autoincrement())
+  orderId   Int
+  foodId    Int
+
+  // Snapshot of food information at purchase time
+  foodName  String
+  unitPrice Int
+  quantity  Int
+  total     Int
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  food  Food  @relation(fields: [foodId], references: [id], onDelete: Restrict)
+
+  review Review?
+
+  @@index([orderId])
+  @@index([foodId])
+}
+
+model OrderStatusHistory {
+  id        Int @id @default(autoincrement())
+  orderId   Int
+  changedById Int?
+
+  status    OrderStatus
+  note      String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedBy User? @relation("OrderStatusActor", fields: [changedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+// -----------------------------------------------------
+// PAYMENTS
+// -----------------------------------------------------
+
+model Payment {
+  id Int @id @default(autoincrement())
+
+  orderId Int
+
+  method PaymentMethod @default(RAZORPAY)
+  status PaymentStatus @default(CREATED)
+
+  amount Int
+
+  razorpayOrderId   String? @unique
+  razorpayPaymentId String? @unique
+  razorpaySignature String?
+
+  failureReason String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId, status])
+}
+
+// -----------------------------------------------------
+// INTERNAL DELIVERY MANAGEMENT
+// -----------------------------------------------------
+
+model Delivery {
+  id        Int @id @default(autoincrement())
+  orderId   Int @unique
+  partnerId Int?
+
+  status DeliveryStatus @default(UNASSIGNED)
+
+  assignedAt DateTime?
+  acceptedAt DateTime?
+  pickedUpAt DateTime?
+  deliveredAt DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  partner User? @relation("DeliveryPartner", fields: [partnerId], references: [id], onDelete: SetNull)
+
+  events DeliveryEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partnerId, status])
+  @@index([status])
+}
+
+model DeliveryEvent {
+  id         Int @id @default(autoincrement())
+  deliveryId Int
+  actorId    Int?
+
+  status     DeliveryStatus
+  note       String?
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  actor User? @relation("DeliveryEventActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([deliveryId, createdAt])
+}
+
+// -----------------------------------------------------
+// REVIEWS & RATINGS
+// -----------------------------------------------------
+
+model Review {
+  id          Int @id @default(autoincrement())
+  userId      Int
+  foodId      Int
+  orderItemId Int @unique
+
+  rating  Int
+  comment String?
+
+  status ReviewStatus @default(PENDING)
+
+  moderatedById Int?
+  moderatedBy User? @relation("ReviewModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  food Food @relation(fields: [foodId], references: [id], onDelete: Restrict)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([foodId, status])
+  @@index([userId])
+}
+
+// -----------------------------------------------------
+// CUSTOMER FOOD / RECIPE SUGGESTIONS
+// -----------------------------------------------------
+
+model Suggestion {
+  id          Int @id @default(autoincrement())
+  userId      Int
+
+  title       String
+  description String?
+  ingredients String?
+  recipe      String?
+
+  status SuggestionStatus @default(PENDING)
+
+  adminNote    String?
+  reviewedById Int?
+  reviewedBy User? @relation("SuggestionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  reviewedAt DateTime?
+
+  // Optional link to the catalogue food created from this suggestion
+  approvedFoodId Int? @unique
+  approvedFood Food? @relation("SuggestionFood", fields: [approvedFoodId], references: [id], onDelete: SetNull)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([userId])
+}
