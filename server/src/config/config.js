@@ -18,7 +18,7 @@ export const config = {
 
   databaseUrl: requiredEnv("DATABASE_URL"),
 
-  saltRounds: process.env.SALT_ROUNDS,
+  saltRounds: Number(process.env.SALT_ROUNDS) || 12,
 
   jwt: {
     secret: requiredEnv("JWT_SECRET"),
